@@ -1,0 +1,30 @@
+[
+  {
+    "memberId": 1,
+    "fullName": "Aryan Jangid",
+    "fatherName": "Naresh Kumar Suthar",
+    "address": "84 - Sutharon ka Mohalla, Bus Stand, Pur, Bhilwara",
+    "phoneNumber": "8955558006",
+    "alternateNumber": "7230926320",
+    "dateOfBirth": "2001-09-09",
+    "shareAmount": 75000,
+    "loanAmount": 53000,
+    "membershipFees": 500,
+    "pin": "$2b$10$T8rOJ71FhM6XwL6TBS9J4e1dOPX.1tejaaP81vslOgLU9ZaJtmZSq",
+    "type": "admin"
+  },
+  {
+    "memberId": 2,
+    "fullName": "Manish Jangid",
+    "fatherName": "Banshi Lal Suthar",
+    "address": "84 - Sutharon ka Mohalla, Bus Stand, Pur, Bhilwara",
+    "phoneNumber": "9929918756",
+    "alternateNumber": "",
+    "dateOfBirth": "1985-02-10",
+    "shareAmount": 80000,
+    "loanAmount": 45000,
+    "membershipFees": 500,
+    "pin": "$2b$10$Z60lQYrRhBk9gkmIgl1..ewmgqOWmvYr0e12CFUxzixI7yWXfrtkO",
+    "role": "user"
+  }
+]
