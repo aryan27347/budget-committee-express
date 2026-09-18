@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
@@ -7,17 +7,17 @@ import path from "path";
 import cors from "cors";
 import headersMiddleware from "./middlewares/headers.middleware";
 import authMiddleware from "./middlewares/auth.middleware";
-
-dotenv.config();
+import { UserDataType } from "./models/user.model";
+import prisma from "./prisma";
 
 const app = express();
-const filePath = path.join(__dirname, "users.json");
+const filePath = path.join(__dirname, "mockData", "users.json");
 
 app.use(express.json({ strict: false }));
 app.use(cors());
 app.use(headersMiddleware);
 
-async function readUsersData() {
+async function readUsersData(): Promise<UserDataType[]> {
   try {
     const data = await fs.promises.readFile(filePath, "utf-8");
     return JSON.parse(data);
@@ -27,7 +27,7 @@ async function readUsersData() {
   }
 }
 
-async function writeUsersData(data: any) {
+async function writeUsersData(data: UserDataType[]) {
   try {
     await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2));
   } catch (error) {
@@ -69,13 +69,18 @@ app.post("/user/register", async (req, res) => {
   }
 
   // Check if user already exists
-  if (
-    usersData.find(
-      (user: any) =>
-        user.phoneNumber.toString() === phoneNumber.toString() ||
-        user.memberId.toString() === memberId.toString(),
-    )
-  ) {
+  const userExists = await prisma.member.findMany({
+    where: {
+      OR: [
+        {
+          memberId: Number(memberId),
+          phoneNumber,
+        },
+      ],
+    },
+  });
+
+  if (userExists.length > 0) {
     return res.status(400).json({ error: "User already exists" });
   }
 
@@ -88,30 +93,35 @@ app.post("/user/register", async (req, res) => {
     throw new Error("JWT_SECRET is not configured");
   }
 
-  usersData.push({
-    memberId: Number(memberId),
-    fullName,
-    fatherName,
-    address,
-    phoneNumber,
-    alternateNumber,
-    dateOfBirth,
-    shareAmount: Number(shareAmount),
-    loanAmount: Number(loanAmount),
-    membershipFees: Number(membershipFees),
-    pin: hashedPassword,
-    role: "user",
-  });
+  try {
+    const user = await prisma.member.create({
+      data: {
+        memberId: Number(memberId),
+        fullName,
+        fatherName,
+        address,
+        phoneNumber,
+        alternateNumber,
+        dateOfBirth,
+        shareAmount: Number(shareAmount),
+        loanAmount: Number(loanAmount),
+        membershipFees: Number(membershipFees),
+        role: "USER",
+        pin: hashedPassword,
+      },
+    });
 
-  writeUsersData(usersData);
-
-  res.json({ user: req.body });
+    res.json({ user });
+  } catch (error) {
+    res.status(400).json({ error });
+  }
 });
 
 app.post("/user/login", async (req, res) => {
-  const { phoneNumber, pin } = req.body;
+  const { phoneNumber } = req.body;
+  const userPin = req.body.pin;
 
-  if (!phoneNumber || !pin) {
+  if (!phoneNumber || !userPin) {
     return res.status(400).json({ error: "Phone number and PIN are required" });
   }
 
@@ -119,25 +129,27 @@ app.post("/user/login", async (req, res) => {
     return res.status(400).json({ error: "Please enter correct phone number" });
   }
 
-  if (pin.length !== 4) {
+  if (userPin.length !== 4) {
     return res.status(400).json({ error: "PIN must be 4 digits" });
   }
 
-  const usersData = await readUsersData();
-  const user = usersData.find((user: any) => user.phoneNumber === phoneNumber);
+  const userData = await prisma.member.findFirst({
+    where: {
+      phoneNumber,
+    },
+  });
 
-  if (!user) {
+  if (!userData) {
     return res.status(400).json({ error: "User not found" });
   }
 
-  const isPinValid = bcrypt.compareSync(pin, user.pin);
+  const isPinValid = bcrypt.compareSync(userPin, userData.pin as string);
 
   if (!isPinValid) {
     return res.status(400).json({ error: "Invalid PIN" });
   }
 
-  const payload = { ...user };
-  delete payload.pin;
+  const { pin, ...payload } = userData;
 
   // Generate JWT token
   const JWT_SECRET = process.env.JWT_SECRET;
@@ -154,10 +166,10 @@ app.post("/user/login", async (req, res) => {
 });
 
 app.get("/users", authMiddleware, async (req, res) => {
-  const usersData = await readUsersData();
-  const users = usersData.map((data: any) => {
-    delete data.pin;
-    return data;
+  const usersData = await prisma.member.findMany();
+  const users = usersData.map((data) => {
+    const { pin, ...user } = data;
+    return user;
   });
   return res.status(200).json({ users });
 });
