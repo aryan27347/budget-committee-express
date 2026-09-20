@@ -28,6 +28,7 @@ model Member {
     pin             String
 
     @@index([memberId, phoneNumber])
+    @@map("members")
 }
 
 enum Role {
