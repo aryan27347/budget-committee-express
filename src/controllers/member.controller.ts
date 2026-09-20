@@ -25,7 +25,10 @@ export class MemberController {
     const { id } = req.params;
     try {
       const member = await this.memberService.findMemberById(id as string);
-      return res.status(200).json({ member });
+      if (!member) {
+        return res.status(400).json({ error: "Member not found" });
+      }
+      return res.status(200).json({ ...member });
     } catch (error) {
       console.log(error);
       res.status(400).json({ error });
