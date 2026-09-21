@@ -10,14 +10,13 @@ export class MemberController {
   public getAllMembers = async (
     req: Request<{}, {}, MemberDataType>,
     res: Response,
-    next: NextFunction,
   ) => {
     try {
       const members = await this.memberService.getAllMembers();
       return res.status(200).json({ members });
     } catch (error) {
       console.log(error);
-      next(error);
+      res.status(400).json({ error });
     }
   };
 
@@ -203,7 +202,7 @@ export class MemberController {
 
     try {
       await this.memberService.deleteMember(memberId);
-      res.json({ message: "Member deleted successfully" });
+      res.json({ message: "Member deleted successfully", memberId });
     } catch (error) {
       console.log(error);
       res.json({ error });
