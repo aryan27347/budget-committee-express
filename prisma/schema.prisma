@@ -14,16 +14,16 @@ datasource db {
 }
 
 model Member {
-    memberId        Int     @id @unique
-    fullName        String  @db.VarChar(100)
-    fatherName      String  @db.VarChar(100)
+    memberId        Int     @id @unique @map("member_id")
+    fullName        String  @db.VarChar(100) @map("full_name")
+    fatherName      String  @db.VarChar(100) @map("father_name")
     address         String  @db.VarChar(255)
-    phoneNumber     String  @unique @db.VarChar(10)
-    alternateNumber String? @db.VarChar(10)
-    dateOfBirth     String  @db.VarChar(10)
-    shareAmount     Int     @default(0)
-    loanAmount      Int     @default(0)
-    membershipFees  Int     @default(0)
+    phoneNumber     String  @unique @db.VarChar(10) @map("phone_number")
+    alternateNumber String? @db.VarChar(10) @map("alternate_number")
+    dateOfBirth     String  @db.VarChar(10) @map("dob")
+    shareAmount     Int     @default(0) @map("share_amount")
+    loanAmount      Int     @default(0) @map("loan_amount")
+    membershipFees  Int     @default(0) @map("membership_fees")
     role            Role    @default(USER)
     pin             String
 

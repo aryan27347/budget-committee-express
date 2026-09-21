@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import prisma from "../prisma";
+import prisma from "../lib/prisma";
 import { MemberDataType } from "../models/member.model";
 
 export class MemberService {
