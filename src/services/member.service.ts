@@ -44,8 +44,8 @@ export class MemberService {
           OR: [
             {
               memberId: Number(memberId),
-              phoneNumber,
             },
+            { phoneNumber },
           ],
         },
         select: {

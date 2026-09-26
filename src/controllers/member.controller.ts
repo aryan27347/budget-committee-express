@@ -3,40 +3,48 @@ import { MemberDataType } from "../models/member.model";
 import { MemberService } from "../services/member.service";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { AuthResponse, GenericAPIResponse } from "../lib/response.model";
 
 export class MemberController {
   private memberService = new MemberService();
 
   public getAllMembers = async (
     req: Request<{}, {}, MemberDataType>,
-    res: Response,
+    res: Response<GenericAPIResponse<MemberDataType[]>>,
   ) => {
     try {
       const members = await this.memberService.getAllMembers();
-      return res.status(200).json({ members });
+      return res
+        .status(200)
+        .json({ data: members, message: "Members fetched successfully" });
     } catch (error) {
       console.log(error);
-      res.status(400).json({ error });
+      res.status(400).json({ error: error as string });
     }
   };
 
-  public getMember = async (req: Request, res: Response) => {
+  public getMember = async (
+    req: Request,
+    res: Response<GenericAPIResponse<MemberDataType>>,
+  ) => {
     const { id } = req.params;
     try {
       const member = await this.memberService.findMemberById(id as string);
       if (!member) {
         return res.status(400).json({ error: "Member not found" });
       }
-      return res.status(200).json({ ...member });
+      return res
+        .status(200)
+        .json({ data: member, message: "Member fetched successfully" });
     } catch (error) {
       console.log(error);
-      res.status(400).json({ error });
+      res.status(400).json({ error: error as string });
     }
   };
 
   public registerMember = async (
     req: Request<{}, {}, MemberDataType>,
-    res: Response,
+    res: Response<GenericAPIResponse<MemberDataType>>,
   ) => {
     const pin = "1234";
     const { memberId, phoneNumber } = req.body;
@@ -64,7 +72,9 @@ export class MemberController {
     );
 
     if (memberExists.length > 0) {
-      return res.status(400).json({ error: "Member already exists" });
+      return res.status(400).json({
+        error: `Member already exists with Member ID: ${memberId} or Phone Number: ${phoneNumber}`,
+      });
     }
 
     // Hash the PIN
@@ -81,13 +91,16 @@ export class MemberController {
         ...req.body,
         pin: hashedPassword,
       });
-      res.json({ member });
+      res.json({ data: member, message: "Member registered successfully" });
     } catch (error) {
-      res.status(400).json({ error });
+      res.status(400).json({ error: error as string });
     }
   };
 
-  public login = async (req: Request, res: Response) => {
+  public login = async (
+    req: Request,
+    res: Response<GenericAPIResponse<AuthResponse>>,
+  ) => {
     const { phoneNumber } = req.body;
     const memberPin = req.body.pin;
 
@@ -112,7 +125,7 @@ export class MemberController {
       memberData = await this.memberService.checkMember(phoneNumber);
     } catch (error) {
       console.log(error);
-      res.status(400).json({ error });
+      res.status(400).json({ error: error as string });
     }
 
     if (!memberData) {
@@ -138,10 +151,16 @@ export class MemberController {
       expiresIn: "1h",
     });
 
-    res.json({ token, member: payload });
+    res.json({
+      data: { token, member: payload },
+      message: "Login successfully",
+    });
   };
 
-  public updateMember = async (req: Request, res: Response) => {
+  public updateMember = async (
+    req: Request,
+    res: Response<GenericAPIResponse<MemberDataType>>,
+  ) => {
     const {
       memberId,
       fullName,
@@ -158,7 +177,6 @@ export class MemberController {
       !fatherName ||
       !address ||
       !phoneNumber ||
-      !alternateNumber ||
       !dateOfBirth
     ) {
       return res.status(400).json({ error: "All fields are required" });
@@ -169,7 +187,7 @@ export class MemberController {
       memberExists = await this.memberService.checkMember(phoneNumber);
     } catch (error) {
       console.log(error);
-      res.status(400).json({ error });
+      res.status(400).json({ error: error as string });
     }
 
     if (!memberExists) {
@@ -186,26 +204,45 @@ export class MemberController {
         alternateNumber,
         dateOfBirth,
       });
-      res.json({ member });
+      res.json({ data: member, message: "Member updated successfully" });
     } catch (error) {
       console.log(error);
-      res.status(400).json({ error });
+      res.status(400).json({ error: error as string });
     }
   };
 
-  public deleteUser = async (req: Request, res: Response) => {
-    const { memberId } = req.body;
+  public deleteMember = async (
+    req: Request,
+    res: Response<GenericAPIResponse>,
+  ) => {
+    const { id } = req.params;
 
-    if (!memberId) {
+    if (!id) {
       return res.json({ error: "Member Id is required" });
     }
 
+    let userExists;
+
     try {
-      await this.memberService.deleteMember(memberId);
-      res.json({ message: "Member deleted successfully", memberId });
+      userExists = await this.memberService.findMemberById(id as string);
+
+      if (!userExists) {
+        return res.status(400).json({ error: "Member not found" });
+      }
     } catch (error) {
       console.log(error);
-      res.json({ error });
+      res.status(400).json({ error: error as string });
+    }
+
+    try {
+      await this.memberService.deleteMember(Number(id));
+      res.json({
+        message: "Member deleted successfully",
+        data: { memberId: id },
+      });
+    } catch (error) {
+      console.log(error);
+      res.json({ error: error as string });
     }
   };
 }

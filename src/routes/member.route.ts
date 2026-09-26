@@ -19,6 +19,6 @@ router.post("/register", authMiddleware, memberController.registerMember);
 // Only Authorized Member can update profile
 router.put("/update", authMiddleware, memberController.updateMember);
 
-router.delete("/delete", authMiddleware, memberController.deleteUser);
+router.delete("/delete/:id", authMiddleware, memberController.deleteMember);
 
 export default router;
